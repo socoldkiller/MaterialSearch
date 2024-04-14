@@ -37,7 +37,7 @@ AUTO_SAVE_INTERVAL = int(os.getenv('AUTO_SAVE_INTERVAL', 100))  # 扫描自动�
 # 中文超大模型："OFA-Sys/chinese-clip-vit-huge-patch14"
 # 英文小模型： "openai/clip-vit-base-patch16"
 # 英文大模型："openai/clip-vit-large-patch14-336"
-MODEL_NAME = os.getenv('MODEL_NAME', "OFA-Sys/chinese-clip-vit-base-patch16")  # CLIP模型
+MODEL_NAME = os.getenv('MODEL_NAME', "chinese-clip-vit-base-patch16")  # CLIP模型
 DEVICE = os.getenv('DEVICE', 'cpu')  # 推理设备，cpu/cuda/mps，建议先跑benchmark.py看看cpu还是显卡速度更快。因为数据搬运也需要时间，所以不一定是GPU更快。
 
 # *****搜索配置*****
