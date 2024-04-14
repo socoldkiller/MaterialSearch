@@ -20,7 +20,7 @@ from search import (
     search_video_by_image,
     search_video_by_text,
     search_video_file,
-    search_pexels_video_by_text,
+    search_pexels_video_by_text, search_image_by_text_path_times,
 )
 from utils import crop_video, get_hash, softmax, resize_image_with_aspect_ratio
 
@@ -162,33 +162,49 @@ def api_match():
         if not upload_file_path or not os.path.exists(upload_file_path):
             return "你没有上传文件！", 400
     logger.debug(data)
-    # 进行匹配
-    if search_type == 0:  # 文字搜图
-        sorted_list = search_image_by_text(data["positive"], data["negative"], positive_threshold, negative_threshold)[:MAX_RESULT_NUM]
-    elif search_type == 1:  # 以图搜图
-        sorted_list = search_image_by_image(upload_file_path, image_threshold)[:MAX_RESULT_NUM]
-    elif search_type == 2:  # 文字搜视频
-        sorted_list = search_video_by_text(data["positive"], data["negative"], positive_threshold, negative_threshold)[:MAX_RESULT_NUM]
-    elif search_type == 3:  # 以图搜视频
-        sorted_list = search_video_by_image(upload_file_path, image_threshold)[:MAX_RESULT_NUM]
-    elif search_type == 4:  # 图文相似度匹配
-        score = match_text_and_image(process_text(data["text"]), process_image(upload_file_path)) * 100
-        return jsonify({"score": "%.2f" % score})
-    elif search_type == 5:  # 以图搜图(图片是数据库中的)
-        sorted_list = search_image_by_image(img_id, image_threshold)[:MAX_RESULT_NUM]
-    elif search_type == 6:  # 以图搜视频(图片是数据库中的)
-        sorted_list = search_video_by_image(img_id, image_threshold)[:MAX_RESULT_NUM]
-    elif search_type == 7:  # 路径搜图
-        results = search_image_file(path)[:top_n]
-        return jsonify(results)
-    elif search_type == 8:  # 路径搜视频
-        results = search_video_file(path=path)[:top_n]
-        return jsonify(results)
-    elif search_type == 9:  # 文字搜pexels视频
-        sorted_list = search_pexels_video_by_text(data["positive"], positive_threshold)
-    else:  # 空
-        logger.warning(f"search_type不正确：{search_type}")
-        abort(400)
+
+    match search_type:
+        case 0:
+            sorted_list = search_image_by_text(data["positive"], data["negative"], positive_threshold,
+                                               negative_threshold)[
+                          :MAX_RESULT_NUM]
+        case 1:
+            sorted_list = search_image_by_image(upload_file_path, image_threshold)[:MAX_RESULT_NUM]
+        case 2:
+            sorted_list = search_video_by_image(upload_file_path, image_threshold)[:MAX_RESULT_NUM]
+        case 3:
+            score = match_text_and_image(process_text(data["text"]), process_image(upload_file_path)) * 100
+            return jsonify({"score": "%.2f" % score})
+
+        case 4:
+            sorted_list = search_image_by_image(img_id, image_threshold)[:MAX_RESULT_NUM]
+        case 5:
+            sorted_list = search_video_by_image(img_id, image_threshold)[:MAX_RESULT_NUM]
+
+        case 6:
+            results = search_image_file(path)[:top_n]
+            return jsonify(results)
+
+        case 7:
+            results = search_video_file(path=path)[:top_n]
+            return jsonify(results)
+
+        case 8:
+            sorted_list = search_pexels_video_by_text(data["positive"], positive_threshold)
+
+        case 9:
+            sorted_list = search_image_by_text_path_times(data["positive"],
+                                                          data["negative"],
+                                                          positive_threshold,
+                                                          negative_threshold
+                                                          , data['path'],
+                                                          data["start_time"],
+                                                          data["end_time"])[
+                          :MAX_RESULT_NUM]
+        case _:
+            logger.warning(f"search_type不正确：{search_type}")
+            abort(400)
+
     # 匹配后进行softmax计算
     if search_type in (0, 1, 5):
         sorted_list = sorted_list[:top_n]

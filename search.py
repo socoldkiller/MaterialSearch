@@ -89,6 +89,30 @@ def search_image_by_text(
     return search_image_by_feature(positive_feature, negative_feature, positive_threshold, negative_threshold)
 
 
+def search_image_by_text_path_times(
+        positive_prompt="",
+        negative_prompt="",
+        positive_threshold=POSITIVE_THRESHOLD,
+        negative_threshold=NEGATIVE_THRESHOLD,
+        file_path="",
+        start_time="",
+        end_time="",
+):
+    images = search_image_by_text(positive_prompt, negative_prompt, positive_threshold, negative_threshold)
+
+    def time_filter(image):
+        start = time.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        end = time.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+        return time.mktime(start) <= os.stat(image['path']).st_mtime <= time.mktime(end)
+
+    def path_file_filter(image):
+        path: str = image['path']
+        return path in file_path
+
+    images = list(filter(time_filter, images))
+    images = list(filter(path_file_filter, images))
+    return images
+
 @lru_cache(maxsize=CACHE_SIZE)
 def search_image_by_image(img_id_or_path, threshold=IMAGE_THRESHOLD):
     """
@@ -282,7 +306,8 @@ def search_pexels_video_by_feature(positive_feature, positive_threshold=POSITIVE
             title_list, description_list, duration_list, view_count_list = get_pexels_video_features(session)
     if len(thumbnail_feature_list) == 0:  # 没有素材，直接返回空
         return []
-    thumbnail_features = np.frombuffer(b"".join(thumbnail_feature_list), dtype=np.float32).reshape(len(thumbnail_feature_list), -1)
+    thumbnail_features = np.frombuffer(b"".join(thumbnail_feature_list), dtype=np.float32).reshape(
+        len(thumbnail_feature_list), -1)
     thumbnail_scores = match_batch(positive_feature, None, thumbnail_features, positive_threshold, None)
     return_list = []
     for score, thumbnail_loc, content_loc, title, description, duration, view_count in zip(
@@ -322,7 +347,8 @@ if __name__ == '__main__':
     from utils import format_seconds
 
     parser = argparse.ArgumentParser(description='Search local photos and videos through natural language.')
-    parser.add_argument('search_type', metavar='<type>', choices=['image', 'video'], help='search type (image or video).')
+    parser.add_argument('search_type', metavar='<type>', choices=['image', 'video'],
+                        help='search type (image or video).')
     parser.add_argument('positive_prompt', metavar='<positive_prompt>')
     args = parser.parse_args()
     positive_prompt = args.positive_prompt
