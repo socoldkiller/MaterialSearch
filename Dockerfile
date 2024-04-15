@@ -8,11 +8,11 @@ ENV TRANSFORMERS_OFFLINE=0
 RUN apt update &&  \
     apt install -y ffmpeg  && \
     apt install git-lfs && \
+    git lfs install && \
     apt clean
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt &&  \
-    git lfs install && \
     git clone https://huggingface.co/OFA-Sys/chinese-clip-vit-base-patch16
 
 COPY *.py ./
